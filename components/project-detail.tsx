@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import {useState} from "react";
 import type {Project} from "@/lib/project-data";
 import {ArrowDownLeft,ArrowUpRight,ChevronLeft,ChevronRight,Copy,Pencil,X} from "lucide-react";
@@ -10,7 +11,7 @@ export default function ProjectDetail({project:p,lang,onClose,onEdit,canEdit=fal
   const changeImage=(delta:number)=>{setDir(delta);setImageIndex(i=>(i+delta+p.images.length)%p.images.length);};
   return <article className={`project-detail ${standalone?"standalone-detail":""}`}>
     <div className="detail-topbar"><span className="eyebrow">STRATOS / {p.category.toUpperCase()}</span>
-      {onClose?<button className="icon-button" onClick={onClose} aria-label={t("Close project","Loyihani yopish")}><X size={22}/></button>:<a className="text-link" href="/#work"><ArrowDownLeft size={17}/>{t("All work","Barcha ishlar")}</a>}
+      {onClose?<button className="icon-button" onClick={onClose} aria-label={t("Close project","Loyihani yopish")}><X size={22}/></button>:<Link className="text-link" href="/#work"><ArrowDownLeft size={17}/>{t("All work","Barcha ishlar")}</Link>}
     </div>
     <div className="detail-main-image" onKeyDown={e=>{if(e.key==="ArrowRight"){e.preventDefault();changeImage(1);}if(e.key==="ArrowLeft"){e.preventDefault();changeImage(-1);}}} tabIndex={p.images.length>1?0:undefined} role={p.images.length>1?"group":undefined} aria-label={p.images.length>1?t("Project images. Use left and right arrows.","Loyiha rasmlari. Chap va o‘ng tugmalarini ishlating."):undefined}>
       <img key={image.id} src={image.url} alt={image.alt} data-dir={dir>0?"next":dir<0?"prev":undefined}/>
@@ -25,11 +26,11 @@ export default function ProjectDetail({project:p,lang,onClose,onEdit,canEdit=fal
       </div><aside className="project-specs"><div><h3>{t("Role & attribution","Ishtirok va mualliflik")}</h3><p>{p.role}</p></div>
         {p.tools.length>0&&<div><h3>{t("Tools & software","Vositalar va dasturlar")}</h3><div className="tags">{p.tools.map(v=><span key={v}>{v}</span>)}</div></div>}
         {p.skills.length>0&&<div><h3>{t("Skills explored","Ko‘nikmalar")}</h3><div className="tags">{p.skills.map(v=><span key={v}>{v}</span>)}</div></div>}
-        {p.sourceUrl&&<a className="text-link" href={p.sourceUrl} target="_blank" rel="noopener noreferrer">{t("Original post / source","Asl post / manba")}<ArrowUpRight size={16}/></a>}
+        {p.sourceUrl&&<Link className="text-link" href={p.sourceUrl} target="_blank" rel="noopener noreferrer">{t("Original post / source","Asl post / manba")}<ArrowUpRight size={16}/></Link>}
       </aside></div>
       {p.sourceCaption&&<details className="source-caption"><summary>{t("Read the original post caption","Asl post izohini o‘qish")}</summary><p>{p.sourceCaption}</p></details>}
       {p.credits&&<p className="authorship-note"><span>↳</span>{p.credits}</p>}
-      <div className="detail-actions"><button className="text-link" onClick={copy}><Copy size={15}/>{t("Copy project link","Loyiha havolasi")}</button><a className="text-link" href={image.url} target="_blank" rel="noopener noreferrer">{t("View full image","To‘liq tasvir")}<ArrowUpRight size={16}/></a>{!standalone&&<a className="text-link" href={`/projects/${p.id}`}>{t("Open project page","Loyiha sahifasi")}<ArrowUpRight size={16}/></a>}{canEdit&&onEdit&&<button className="text-link" onClick={()=>onEdit(p)}><Pencil size={15}/>{t("Edit project","Tahrirlash")}</button>}</div>
+      <div className="detail-actions"><button className="text-link" onClick={copy}><Copy size={15}/>{t("Copy project link","Loyiha havolasi")}</button><Link className="text-link" href={image.url} target="_blank" rel="noopener noreferrer">{t("View full image","To‘liq tasvir")}<ArrowUpRight size={16}/></Link>{!standalone&&<Link className="text-link" href={`/projects/${p.id}`}>{t("Open project page","Loyiha sahifasi")}<ArrowUpRight size={16}/></Link>}{canEdit&&onEdit&&<button className="text-link" onClick={()=>onEdit(p)}><Pencil size={15}/>{t("Edit project","Tahrirlash")}</button>}</div>
       <p className="small-feedback" role="status">{feedback}</p>
     </div>
   </article>;

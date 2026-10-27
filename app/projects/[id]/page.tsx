@@ -1,6 +1,7 @@
-import { env } from "cloudflare:workers";
+import { portfolioEnv } from "@/lib/supabase";
+const env = portfolioEnv();
 import { notFound } from "next/navigation";
-import { getChatGPTUser } from "../../chatgpt-auth";
+import { getOwner as getChatGPTUser } from "@/lib/owner-auth";
 import { isOwner,listProjects } from "@/lib/portfolio-service";
 import { defaultProjects } from "@/lib/project-data";
 import Portfolio from "../../portfolio";

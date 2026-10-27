@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {Window} from 'happy-dom';
 
 const win=new Window({url:'https://portfolio.test/'});
+globalThis.self=win;
 for(const key of ['window','document','navigator','HTMLElement','HTMLDialogElement','HTMLInputElement','Event','MouseEvent','KeyboardEvent','FormData'])Object.defineProperty(globalThis,key,{value:key==='window'?win:win[key],configurable:true,writable:true});
 globalThis.IS_REACT_ACT_ENVIRONMENT=true;
 win.HTMLElement.prototype.scrollIntoView=function(){};
@@ -18,9 +19,14 @@ const {default:PortfolioMotion}=await import('../.sites-runtime/ui-test/componen
 const {referenceProjects,defaultProjects}=await import('../.sites-runtime/ui-test/lib/project-data.mjs');
 let serverProjects=[];
 globalThis.fetch=async (_url,options={})=>{
+  if(_url==='/api/uploads'){
+    const {files}=JSON.parse(options.body);
+    return Response.json({uploads:files.map((_,i)=>({url:`https://storage.test/upload/${i}`,ticket:`ticket-${i}`}))});
+  }
+  if(options.method==='PUT')return new Response(null,{status:200});
   if(options.method==='POST'){
     const metadata=JSON.parse(options.body.get('metadata')),old=serverProjects.find(p=>p.id===metadata.id);
-    const project={...metadata,id:old?.id??'test-original-render',createdAt:old?.createdAt??'2026-10-19T15:00:00.000Z',updatedAt:'2026-10-19T15:01:00.000Z',archived:false,images:[...(old?.images.filter(im=>metadata.keepImageIds.includes(im.id))??[]),...options.body.getAll('images').map((_,i)=>({id:`new-${i}`,url:`/test-${i}.png`,alt:`${metadata.title} — image ${i+1}`}))]};
+    const project={...metadata,id:old?.id??'test-original-render',createdAt:old?.createdAt??'2026-10-19T15:00:00.000Z',updatedAt:'2026-10-19T15:01:00.000Z',archived:false,images:[...(old?.images.filter(im=>metadata.keepImageIds.includes(im.id))??[]),...JSON.parse(options.body.get('uploads')||'[]').map((_,i)=>({id:`new-${i}`,url:`/test-${i}.png`,alt:`${metadata.title} — image ${i+1}`}))]};
     serverProjects=[project,...serverProjects.filter(p=>p.id!==project.id)];return Response.json({project});
   }
   if(options.method==='PATCH'){

@@ -10,14 +10,21 @@ export default function ProjectEditor({project,lang,onClose,onSave}:{project:Pro
   const [error,setError]=useState(""),[busy,setBusy]=useState(false),[dragOver,setDragOver]=useState(false);
   const fileRef=useRef<HTMLInputElement>(null),errorRef=useRef<HTMLParagraphElement>(null);
   const t=(en:string,uz:string)=>lang==="uz"?uz:en;
-  useEffect(()=>{const urls=files.map(f=>URL.createObjectURL(f));setPreviews(urls);return()=>urls.forEach(URL.revokeObjectURL);},[files]);
+  const previewUrls=useRef<string[]>([]);
+  useEffect(()=>()=>previewUrls.current.forEach(URL.revokeObjectURL),[]);
+  function removeFile(index:number){
+    URL.revokeObjectURL(previewUrls.current[index]);
+    previewUrls.current=previewUrls.current.filter((_,i)=>i!==index);
+    setPreviews([...previewUrls.current]);setFiles(v=>v.filter((_,i)=>i!==index));
+  }
   useEffect(()=>{if(error)errorRef.current?.focus();},[error]);
   function addFiles(incoming:File[]){
     setError("");
     if(keep.length+files.length+incoming.length>MAX_IMAGES){setError(t("Choose up to 6 images per project.","Bitta loyihaga 6 tagacha rasm qo‘shing."));return;}
     if(incoming.some(f=>!['image/png','image/jpeg','image/webp'].includes(f.type)||f.size>MAX_FILE_BYTES||f.size===0)){setError(t("Use PNG, JPEG, or WebP images, each up to 8 MB.","PNG, JPEG yoki WebP rasmlarni tanlang, har biri 8 MB gacha."));return;}
     if([...files,...incoming].reduce((s,f)=>s+f.size,0)>MAX_TOTAL_BYTES){setError(t("Keep the total upload under 24 MB.","Jami rasmlar 24 MB dan oshmasin."));return;}
-    setFiles(f=>[...f,...incoming]);
+    previewUrls.current.push(...incoming.map(f=>URL.createObjectURL(f)));
+    setPreviews([...previewUrls.current]);setFiles(f=>[...f,...incoming]);
   }
   async function submit(event:FormEvent<HTMLFormElement>){
     event.preventDefault();setError("");
@@ -27,8 +34,20 @@ export default function ProjectEditor({project,lang,onClose,onSave}:{project:Pro
     if(!files.length&&!keep.length){setError(t("Add at least one render or image.","Kamida bitta render yoki rasm qo‘shing."));return;}
     setBusy(true);
     const body=new FormData();body.set("metadata",JSON.stringify({...metadata,id:project?.id,expectedUpdatedAt:project?.updatedAt,keepImageIds:keep.map(im=>im.id)}));
-    files.forEach(file=>body.append("images",file));
-    try{const response=await fetch("/api/projects",{method:"POST",body}),result=await response.json() as {project:Project;error?:string};if(!response.ok)throw new Error(result.error??"Could not save this project.");onSave(result.project);}
+    try{
+      const tickets:string[]=[];
+      if(files.length){
+        const prepared=await fetch("/api/uploads",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({files:files.map(f=>({type:f.type,size:f.size}))})});
+        const data=await prepared.json() as {uploads:{url:string;ticket:string}[];error?:string};
+        if(!prepared.ok)throw new Error(data.error??"Could not prepare uploads.");
+        for(let i=0;i<files.length;i++){
+          const upload=await fetch(data.uploads[i].url,{method:"PUT",headers:{"Content-Type":files[i].type},body:files[i]});
+          if(!upload.ok)throw new Error("Image upload failed. Please try again.");
+          tickets.push(data.uploads[i].ticket);
+        }
+      }
+      body.set("uploads",JSON.stringify(tickets));
+const response=await fetch("/api/projects",{method:"POST",body}),result=await response.json() as {project:Project;error?:string};if(!response.ok)throw new Error(result.error??"Could not save this project.");onSave(result.project);}
     catch(e){setError((e as Error).message);setBusy(false);}
   }
   const field=(name:keyof Project,label:string,placeholder="",required=false,maxLength=5000,multiline=false)=><label className={multiline?"form-field full":"form-field"}><span>{label}{required&&<i> *</i>}</span>{multiline?<textarea name={name} rows={4} defaultValue={String(project?.[name]??"")} placeholder={placeholder} maxLength={maxLength}/>:<input name={name} defaultValue={String(project?.[name]??(name==="role"?"Modelling, materials & rendering":""))} placeholder={placeholder} required={required} maxLength={maxLength} type={name==="sourceUrl"?"url":"text"}/>}</label>;
@@ -39,7 +58,7 @@ export default function ProjectEditor({project,lang,onClose,onSave}:{project:Pro
         <input id="render-files" ref={fileRef} type="file" accept="image/png,image/jpeg,image/webp" multiple className="visually-hidden" aria-label={t("Choose render images","Render rasmlarini tanlang")} onChange={e=>{addFiles([...e.target.files??[]]);e.target.value="";}}/>
         <ImagePlus size={32} strokeWidth={1.2}/><h3>{t("Your renders belong here.","Renderlaringiz uchun joy.")}</h3><p>{t("Drag images here, or choose files below.","Rasmlarni shu yerga tashlang yoki fayl tanlang.")}</p><button className="button button-dark" type="button" onClick={()=>fileRef.current?.click()}><Upload size={15}/>{t("Choose images","Rasmlarni tanlash")}</button><small>PNG, JPEG, WEBP · 6 {t("images","rasm")} · 8 MB / {t("image","rasm")} · 24 MB {t("total","jami")}</small>
       </div>
-      {(keep.length+files.length)>0&&<div className="upload-previews">{keep.map((im,i)=><div key={im.id}><img src={im.url} alt={im.alt}/><span>{i===0?t("Cover image","Muqova"):String(i+1)}</span><button type="button" className="icon-button" aria-label={`${t("Remove image","Rasmni olib tashlash")} ${i+1}`} onClick={()=>setKeep(v=>v.filter(k=>k.id!==im.id))}><X size={16}/></button></div>)}{files.map((file,i)=><div key={`${file.name}-${i}`}><img src={previews[i]} alt={file.name}/><span>{keep.length+i===0?t("Cover image","Muqova"):String(keep.length+i+1)}</span><button type="button" className="icon-button" aria-label={`${t("Remove image","Rasmni olib tashlash")} ${keep.length+i+1}`} onClick={()=>setFiles(v=>v.filter((_,j)=>j!==i))}><X size={16}/></button></div>)}</div>}
+      {(keep.length+files.length)>0&&<div className="upload-previews">{keep.map((im,i)=><div key={im.id}><img src={im.url} alt={im.alt}/><span>{i===0?t("Cover image","Muqova"):String(i+1)}</span><button type="button" className="icon-button" aria-label={`${t("Remove image","Rasmni olib tashlash")} ${i+1}`} onClick={()=>setKeep(v=>v.filter(k=>k.id!==im.id))}><X size={16}/></button></div>)}{files.map((file,i)=><div key={`${file.name}-${i}`}><img src={previews[i]} alt={file.name}/><span>{keep.length+i===0?t("Cover image","Muqova"):String(keep.length+i+1)}</span><button type="button" className="icon-button" aria-label={`${t("Remove image","Rasmni olib tashlash")} ${keep.length+i+1}`} onClick={()=>removeFile(i)}><X size={16}/></button></div>)}</div>}
       <div className="form-grid">
         {field("title",t("Project title","Loyiha nomi"),t("e.g. An aircraft at golden hour","Masalan: Quyosh botishidagi samolyot"),true,100)}
         <label className="form-field"><span>{t("Category","Kategoriya")} *</span><select name="category" defaultValue={project?.category??"Aviation"}>{categories.map(c=><option key={c}>{c}</option>)}</select></label>

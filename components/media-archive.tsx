@@ -27,7 +27,6 @@ export default function MediaArchive({lang,onOpenProject}:{lang:string;onOpenPro
   function open(item:MediaItem,direction:""|"next"|"prev"=""){pauseOtherVideos();setDir(direction);setSelected(item.id);setPlaybackError(false);}
   function navigate(offset:number){const next=filtered[(activeIndex+offset+filtered.length)%filtered.length];if(next)open(next,offset>0?"next":"prev");}
   function openGymAlbum(){selectAlbum("gym");selectKind("all");document.getElementById("media")?.scrollIntoView({behavior:window.matchMedia("(prefers-reduced-motion: reduce)").matches?"instant":"smooth"});}
-  useEffect(()=>{setPlaybackError(false);},[selected]);
   useEffect(()=>{
     if(!selected)return;
     const close=()=>{if(document.hidden)lightboxRef.current?.querySelector("video")?.pause();};

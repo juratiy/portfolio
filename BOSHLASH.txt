@@ -1,3 +1,9 @@
+JORIY VERCEL VARIANTI
+
+Vercel + Supabase uchun docs/vercel-deploy.md ni o‘qing.
+Node.js 24 va pnpm 11.25.0: pnpm install --frozen-lockfile, npm run dev.
+Quyidagi yozuvlar oldingi ChatGPT Sites eksportiga tegishli.
+
 JUR’AT PORTFOLIOSI — MANBA KODLARI
 
 Versiya: 7 (sertifikatlar bo‘limi va Claude animatsiyalari bilan).

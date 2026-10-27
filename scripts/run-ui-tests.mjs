@@ -8,6 +8,7 @@ for(const name of files){
   const dest=resolve(out,name.replace(/\.tsx?$/,'.mjs'));
   let compiled=ts.transpileModule(readFileSync(name,'utf8'),{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.ESNext,jsx:ts.JsxEmit.ReactJSX}}).outputText;
   compiled=compiled.replace(/(from\s*["'])([^"']+)(["'])/g,(all,start,path,end)=>{
+    if(path==="next/link")return start+"next/link.js"+end;
     if(!path.startsWith('.')&&!path.startsWith('@/'))return all;
     const source=path.startsWith('@/')?resolve(root,path.slice(2)):resolve(dirname(resolve(root,name)),path);
     let next=relative(dirname(dest),resolve(out,relative(root,source))).replace(/\.(ts|tsx)$/, '')+'.mjs';

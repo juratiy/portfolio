@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import {useEffect,useMemo,useState} from "react";
 import type {CSSProperties} from "react";
 import {ArrowDown,ArrowUpRight,Archive,Box,Check,ChevronDown,Copy,Menu,Plane,Plus,RefreshCw,Search,SlidersHorizontal,Undo2,X} from "lucide-react";
@@ -12,13 +13,15 @@ import BlenderLab from "@/components/blender-lab";
 import StoryChapters from "@/components/story-chapters";
 import MediaArchive from "@/components/media-archive";
 import CertificatesSection from "@/components/certificates-section";
-type Props={initialProjects:Project[];initialCanEdit:boolean;initialProjectId?:string;initialError?:string};
-export default function Portfolio({initialProjects,initialCanEdit,initialProjectId,initialError=""}:Props){
+type Props={initialProjects:Project[];initialCanEdit:boolean;initialProjectId?:string;initialError?:string;initialStudio?:boolean};
+export default function Portfolio({initialProjects,initialCanEdit,initialProjectId,initialError="",initialStudio=false}:Props){
   const [projects,setProjects]=useState(initialProjects),[canEdit,setCanEdit]=useState(initialCanEdit);
   const [lang,setLang]=useState("en"),[menu,setMenu]=useState(false),[category,setCategory]=useState("All"),[query,setQuery]=useState(""),[sort,setSort]=useState("newest");
-  const [selected,setSelected]=useState<string|null>(null),[editor,setEditor]=useState<Project|null|undefined>(undefined),[studio,setStudio]=useState(false);
+  const [selected,setSelected]=useState<string|null>(null),[editor,setEditor]=useState<Project|null|undefined>(undefined),[studio,setStudio]=useState(initialStudio);
   const [feedback,setFeedback]=useState(""),[error,setError]=useState(initialError),[undo,setUndo]=useState<string|null>(null),[changing,setChanging]=useState("");
   const t=(en:string,uz:string)=>lang==="uz"?uz:en;
+  // The server cannot read localStorage; restore the preference after hydration.
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(()=>{try{const v=localStorage.getItem("stratos-language");if(v==="uz")setLang(v);}catch{}},[]);
   useEffect(()=>{document.documentElement.lang=lang;try{localStorage.setItem("stratos-language",lang);}catch{}},[lang]);
   useEffect(()=>{if(!menu)return;const close=(e:KeyboardEvent)=>{if(e.key==="Escape")setMenu(false);};document.addEventListener("keydown",close);return()=>document.removeEventListener("keydown",close);},[menu]);
@@ -37,14 +40,13 @@ export default function Portfolio({initialProjects,initialCanEdit,initialProject
   async function refresh(){setChanging("refresh");try{const r=await fetch("/api/projects",{cache:"no-store"}),result=await r.json() as {projects:Project[];canEdit:boolean;error?:string};if(!r.ok)throw new Error(result.error);setProjects(result.projects);setCanEdit(result.canEdit);setError("");setFeedback(t("Portfolio refreshed.","Portfolio yangilandi."));}catch(e){setError((e as Error).message);}finally{setChanging("");}}
   async function copy(){const url=new URL("/",window.location.origin).href;try{await navigator.clipboard.writeText(url);setFeedback(t("Portfolio link copied.","Portfolio havolasi nusxalandi."));}catch{setFeedback(url);}}
   function openStudio(){if(initialProjectId){window.location.href="/?studio=1#work";return;}setStudio(s=>!s);document.querySelector("#work")?.scrollIntoView({behavior:"smooth"});setMenu(false);}
-  useEffect(()=>{if(canEdit&&new URLSearchParams(window.location.search).get("studio")==="1")setStudio(true);},[canEdit]);
   function edit(p:Project){setSelected(null);setEditor(p);}
   return <>
     <PortfolioMotion/>
     <a className="skip-link" href="#main">{t("Skip to content","Asosiy mazmunga o‘tish")}</a>
-    <header className="header" id="top"><a className="brand" href="/" aria-label="Stratos home"><svg className="brand-mark" viewBox="0 0 35 35" aria-hidden="true"><path d="M3 26 17.5 4 32 26H3Z"/><path d="m7 26 10.5-8L28 26M17.5 4v14"/></svg><span>stratos<span className="brand-dot">.</span></span><span className="brand-by">{t("A PORTFOLIO BY JUR’AT","JUR’ATNING PORTFOLIOSI")}</span></a>
+    <header className="header" id="top"><Link className="brand" href="/" aria-label="Stratos home"><svg className="brand-mark" viewBox="0 0 35 35" aria-hidden="true"><path d="M3 26 17.5 4 32 26H3Z"/><path d="m7 26 10.5-8L28 26M17.5 4v14"/></svg><span>stratos<span className="brand-dot">.</span></span><span className="brand-by">{t("A PORTFOLIO BY JUR’AT","JUR’ATNING PORTFOLIOSI")}</span></Link>
       <nav className={`nav ${menu?"is-open":""}`} id="navigation" aria-label={t("Main navigation","Asosiy menyu")}><a href={initialProjectId?"/#work":"#work"} onClick={()=>setMenu(false)}>{t("Selected work","Tanlangan ishlar")}</a><a href={initialProjectId?"/#lab":"#lab"} onClick={()=>setMenu(false)}>{t("3D lab","3D sahna")}</a><a href={initialProjectId?"/#about":"#about"} onClick={()=>setMenu(false)}>{t("About me","Men haqimda")}</a><a href={initialProjectId?"/#certificates":"#certificates"} onClick={()=>setMenu(false)}>{t("Certificates","Sertifikatlar")}</a><a href={initialProjectId?"/#gym":"#gym"} onClick={()=>setMenu(false)}>Gym</a><a href={initialProjectId?"/#media":"#media"} onClick={()=>setMenu(false)}>{t("All media","Barcha media")}</a></nav>
-      <div className="header-actions"><div className="languages" role="group" aria-label="Site language"><button className={`language ${lang==="en"?"active":""}`} onClick={()=>setLang("en")} aria-pressed={lang==="en"} lang="en">EN</button><span>/</span><button className={`language ${lang==="uz"?"active":""}`} onClick={()=>setLang("uz")} aria-pressed={lang==="uz"} lang="uz">O‘Z</button></div>{canEdit&&<button className={`studio-button ${studio?"active":""}`} onClick={openStudio} aria-pressed={studio}><SlidersHorizontal size={13}/><span>{t("Your studio","Studiyangiz")}</span></button>}<button className="menu-toggle" onClick={()=>setMenu(v=>!v)} aria-expanded={menu} aria-controls="navigation" aria-label={t(menu?"Close menu":"Open menu",menu?"Menyuni yopish":"Menyuni ochish")}>{menu?<X size={20}/>:<Menu size={20}/>}</button></div>
+      <div className="header-actions"><div className="languages" role="group" aria-label="Site language"><button className={`language ${lang==="en"?"active":""}`} onClick={()=>setLang("en")} aria-pressed={lang==="en"} lang="en">EN</button><span>/</span><button className={`language ${lang==="uz"?"active":""}`} onClick={()=>setLang("uz")} aria-pressed={lang==="uz"} lang="uz">O‘Z</button></div><Link className="text-link" href="/login">{t("Owner login","Kirish")}</Link>{canEdit&&<form action="/api/auth/logout" method="post"><button className="text-link">{t("Sign out","Chiqish")}</button></form>}{canEdit&&<button className={`studio-button ${studio?"active":""}`} onClick={openStudio} aria-pressed={studio}><SlidersHorizontal size={13}/><span>{t("Your studio","Studiyangiz")}</span></button>}<button className="menu-toggle" onClick={()=>setMenu(v=>!v)} aria-expanded={menu} aria-controls="navigation" aria-label={t(menu?"Close menu":"Open menu",menu?"Menyuni yopish":"Menyuni ochish")}>{menu?<X size={20}/>:<Menu size={20}/>}</button></div>
     </header>
     <main id="main">
       {initialProjectId&&pageProject?<div className="standalone-shell section-shell"><ProjectDetail key={pageProject.id} project={pageProject} lang={lang} standalone canEdit={canEdit} onEdit={edit}/></div>:<>
@@ -67,7 +69,7 @@ export default function Portfolio({initialProjects,initialCanEdit,initialProject
       <section className="closing section-shell"><div className="closing-top"><span className="eyebrow">{t("THE STORY IS JUST TAKING OFF","HIKOYAM ENDI BOSHLANYAPTI")}</span><span className="closing-star" aria-hidden="true">✳</span></div><h2>{t("More to make.","Yaratadiganlarim ko‘p.")}<br/><em>{t("More to discover.","Kashf etadiganlarim ham.")}</em></h2><div className="closing-bottom"><p>{t("A growing portfolio. An open horizon.","O‘sib borayotgan portfolio. Ochiq ufqlar.")}</p><button className="button button-dark" onClick={copy}><Copy size={15}/>{t("Copy portfolio link","Portfolio havolasini nusxalash")}<ArrowUpRight size={18}/></button></div></section>
       </>}
     </main>
-    <footer className="footer section-shell"><div className="footer-top"><a className="footer-name" href="/">JUR’AT ESONBOYEV</a><span>{t("AVIATION AMBITIONS. CREATIVE EXPLORATIONS.","AVIATSIYA ORZULARI. IJODIY IZLANISHLAR.")}</span><a className="back-top" href="#top">{t("Back to top","Yuqoriga")} ↑</a></div><div className="footer-wordmark" aria-hidden="true">stratos.</div><div className="footer-bottom"><span>© {new Date().getFullYear()} STRATOS</span><span>{t("FROM UZBEKISTAN, WITH CURIOSITY.","O‘ZBEKISTONDAN, QIZIQISH BILAN.")}</span></div></footer>
+    <footer className="footer section-shell"><div className="footer-top"><Link className="footer-name" href="/">JUR’AT ESONBOYEV</Link><span>{t("AVIATION AMBITIONS. CREATIVE EXPLORATIONS.","AVIATSIYA ORZULARI. IJODIY IZLANISHLAR.")}</span><a className="back-top" href="#top">{t("Back to top","Yuqoriga")} ↑</a></div><div className="footer-wordmark" aria-hidden="true">stratos.</div><div className="footer-bottom"><span>© {new Date().getFullYear()} STRATOS</span><span>{t("FROM UZBEKISTAN, WITH CURIOSITY.","O‘ZBEKISTONDAN, QIZIQISH BILAN.")}</span></div></footer>
     {selectedProject&&<PortfolioModal key={selectedProject.id} labelId="project-title" onClose={()=>setSelected(null)} wide><ProjectDetail project={selectedProject} lang={lang} onClose={()=>setSelected(null)} canEdit={canEdit} onEdit={edit}/></PortfolioModal>}
     {editor!==undefined&&canEdit&&<ProjectEditor key={editor?.id??"new"} project={editor} lang={lang} onClose={()=>setEditor(undefined)} onSave={saved}/>}
     {feedback&&<div className="toast" role="status"><Check size={17}/><span>{feedback}</span>{undo&&<button onClick={()=>{const p=projects.find(p=>p.id===undo);if(p)archiveProject(p,false);}} disabled={Boolean(changing)}>{t("Undo","Qaytarish")}</button>}<button className="icon-button" onClick={()=>{setFeedback("");setUndo(null);}} aria-label={t("Dismiss notification","Xabarni yopish")}><X size={15}/></button></div>}
