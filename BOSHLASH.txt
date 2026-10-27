@@ -1,0 +1,33 @@
+JUR’AT PORTFOLIOSI — MANBA KODLARI
+
+Versiya: 7 (sertifikatlar bo‘limi va Claude animatsiyalari bilan).
+Sayt: https://jurat-stratos.sunlitdeer12.chatgpt.site
+Manba commit: 30a18f3151ec2621efc2e9f2cdadb83c13edf2de
+
+Arxiv ichida:
+- app/ — asosiy sahifa, uslublar, API va loyiha sahifalari;
+- components/ — galereya, animatsiyalar, 3D sahna, sertifikatlar va Gym;
+- lib/ — loyihalar, media va 3D model ma’lumotlari;
+- public/assets/ — saytga kiritilgan rasm va videolar;
+- tests/ — avtomatik tekshiruvlar;
+- package.json va pnpm-lock.yaml — kutubxonalar va versiyalari.
+
+Bu bitta HTML fayl emas: React, Vinext, Three.js va Cloudflare Workers loyihasi.
+
+Ishga tushirish (Linux yoki Windows WSL):
+1. Node.js 22.13.0 yoki undan yangi versiyasi va pnpm 11.25.0 kerak.
+2. Terminalda jurat-portfolio papkasini oching.
+3. npm run install:ci
+4. npm run dev
+5. Terminalda ko‘rsatilgan mahalliy havolani oching.
+
+Tekshiruvlar: npm run typecheck va npm test.
+Build: npm run build.
+
+Kutubxonalar (node_modules), Git tarixi, keshlar va maxfiy hosting sozlamalari
+arxivga kiritilmagan. Kutubxonalar o‘rnatish vaqtida yuklanadi.
+Hostingdagi D1/R2 ma’lumotlar bazasi va keyinchalik studiya orqali yuklangan
+fayllar bu manba kodi eksportidan alohida saqlanadi.
+Sertifikat rasmlaridagi shaxsiy kodlar oldingidek berkitilgan.
+
+Batafsil tuzilma va manbalar: README.md.
